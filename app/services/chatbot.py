@@ -58,7 +58,16 @@ qa_chain = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=db
 
 def query_chatbot(question: str) -> str:
     """
-    Handles chatbot queries by retrieving the best-matching answer from FAISS.
+    Queries the chatbot with a natural language question.
+    
+    This function sends the provided query to the QA chain, which uses a FAISS index
+    to retrieve the most relevant answer from the underlying university dataset.
+    
+    Args:
+        question (str): A natural language query to process.
+    
+    Returns:
+        str: The chatbot's answer.
     """
     response = qa_chain.invoke(question)
     return response

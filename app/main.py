@@ -14,4 +14,10 @@ app.include_router(user.router, prefix="/user", tags=["User"])
 
 @app.get("/")
 def root():
+    """
+    Return a welcome message for ChatUTM.
+    
+    Returns:
+        dict: A dictionary with a 'message' key containing the welcome text.
+    """
     return {"message": "Welcome to ChatUTM!"}
