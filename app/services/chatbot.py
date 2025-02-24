@@ -1,18 +1,18 @@
+import os
 import faiss
-import openai
+from dotenv import load_dotenv
 from langchain.chains.retrieval_qa.base import RetrievalQA
-from langchain_openai import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_community.vectorstores import FAISS
-from langchain_openai import ChatOpenAI
-from langchain_community.document_loaders import TextLoader
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.schema import Document
-import os
 
-# Set your OpenAI API key
+load_dotenv()
+
+# Load OpenAI API key
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 
-# Sample university data in a markup-like format
+# Sample university data
 university_data = """
 [University Information]
 Name: University of Example
@@ -56,7 +56,9 @@ llm = ChatOpenAI(model_name="gpt-3.5-turbo")
 # Create LangChain RetrievalQA chain
 qa_chain = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=db.as_retriever())
 
-# Example query
-query = "كيف اتواصل مع الجامعة؟"
-response = qa_chain.invoke(query)
-print("Answer:", response)
+def query_chatbot(question: str) -> str:
+    """
+    Handles chatbot queries by retrieving the best-matching answer from FAISS.
+    """
+    response = qa_chain.invoke(question)
+    return response
