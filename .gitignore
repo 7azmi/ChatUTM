@@ -1,2 +1,7 @@
+<<<<<<< HEAD
 security.env
 
+=======
+"security.env" 
+security.env 
+>>>>>>> 4e1ab6d (Updated .gitignore to exclude security.env)
