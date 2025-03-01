@@ -1,27 +1,46 @@
 /**
  * Retrieves user input, sends it to the backend, and updates the chat display.
- *
- * The function first obtains the text from the HTML element with the ID "user-input". If the input is empty, it exits early.
- * Otherwise, it appends the user's message to the "chat-box" element, then sends a POST request to the backend endpoint
- * at "http://127.0.0.1:8000/chat/ask" with the input as a JSON payload. Upon receiving the response, it extracts the answer
- * from the JSON data and appends it to the "chat-box" as the bot's reply, and finally clears the user input field.
+ */
+function addMessage(text, sender) {
+    let chatBox = document.getElementById("chat-box");
+    let messageElement = document.createElement("div");
+
+    messageElement.classList.add("message", sender === "You" ? "user-message" : "bot-message");
+    messageElement.innerHTML = `<strong>${sender}:</strong> ${text}`;
+
+    chatBox.appendChild(messageElement);
+    chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll
+}
+
+// Auto-expand textarea when typing
+document.getElementById("user-input").addEventListener("input", function () {
+    this.style.height = "40px"; // Reset height
+    this.style.height = Math.min(this.scrollHeight, 120) + "px"; // Expand but limit max height
+});
+
+/**
+ * Handles sending user input and getting a response from the backend.
  */
 async function sendMessage() {
-    let userInput = document.getElementById("user-input").value;
-    if (!userInput) return;
+    let userInput = document.getElementById("user-input");
+    let text = userInput.value.trim();
+    
+    if (!text) return;
+    
+    addMessage(text, "You"); // Display user message
+    userInput.value = "";
+    userInput.style.height = "40px"; // Reset textarea height after sending
 
-    let chatBox = document.getElementById("chat-box");
-    chatBox.innerHTML += `<p><strong>You:</strong> ${userInput}</p>`;
+    try {
+        let response = await fetch("http://127.0.0.1:8000/chat/ask", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ question: text })
+        });
 
-    // Send request to backend
-    let response = await fetch("http://127.0.0.1:8000/chat/ask", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: userInput })
-    });
-
-    let data = await response.json();
-    chatBox.innerHTML += `<p><strong>Bot:</strong> ${data.answer}</p>`;
-
-    document.getElementById("user-input").value = "";
+        let data = await response.json();
+        addMessage(data.answer, "Bot"); // Display bot response
+    } catch (error) {
+        addMessage("Error: Unable to fetch response", "Bot");
+    }
 }
