@@ -1,5 +1,12 @@
 /**
- * Retrieves user input, sends it to the backend, and updates the chat display.
+ * Appends a formatted chat message to the chat display.
+ *
+ * Creates a new message element styled based on the sender. If the sender is "You", the message
+ * is displayed with user styling; otherwise, it uses bot styling. The sender's name is emphasized,
+ * and the complete message is added to the chat box, which is then auto-scrolled to reveal the new entry.
+ *
+ * @param {string} text - The content of the message to display.
+ * @param {string} sender - The name of the message sender, used to determine styling.
  */
 function addMessage(text, sender) {
     let chatBox = document.getElementById("chat-box");
@@ -19,7 +26,12 @@ document.getElementById("user-input").addEventListener("input", function () {
 });
 
 /**
- * Handles sending user input and getting a response from the backend.
+ * Sends a chat message to the backend and updates the chat interface with both the user's input and the bot's response.
+ *
+ * This asynchronous function retrieves trimmed text from the "user-input" textarea. If the input is non-empty,
+ * it displays the user's message, resets the textarea's content and height, and sends a POST request to the backend
+ * endpoint with the message encapsulated in a JSON object. Upon receiving a successful JSON response, it displays the
+ * bot's answer. In case of a fetch or parsing error, an error message is displayed instead.
  */
 async function sendMessage() {
     let userInput = document.getElementById("user-input");
