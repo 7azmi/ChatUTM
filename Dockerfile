@@ -1,26 +1,21 @@
-# Use an official Python runtime as a parent image
-FROM python:3.9-slim
+FROM python:3.10-slim
 
-# Set the working directory in the container
+# Set the working directory
 WORKDIR /app
 
-# Copy the requirements file into the container
-COPY requirements.txt .
+# Install system dependencies (if needed)
+RUN apt-get update && apt-get install -y \
+    git && \
+    rm -rf /var/lib/apt/lists/*
 
-# Install any needed packages specified in requirements.txt
+# Copy everything including the data/ directory
+COPY . ./
+
+# Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the current directory contents into the container at /app
-COPY . .
+# Ensure chroma_data directory exists
+RUN mkdir -p /app/chroma_data
 
-# Install git to handle submodules
-RUN apt-get update && apt-get install -y git
-
-# Initialize and update submodules
-RUN git submodule init && git submodule update
-
-# Set environment variables (if any)
-# ENV PYTHONUNBUFFERED=1
-
-# Run the command to start your application
+# Set the default command to run main.py
 CMD ["python", "main.py"]
