@@ -36,11 +36,27 @@ def get_response(user_message, chat_history):
     Returns:
         tuple: A tuple containing the response string and the updated chat history.
     """
+    # Define an instruction for ChatUTM
+    instruction = (
+        "You are ChatUTM, an AI assistant designed to help UTM students and staff. "
+        "Provide accurate and useful information related to Universiti Teknologi Malaysia (UTM), including courses, facilities, events, and academic support. "
+        "If the user greets you with 'hi', '/start', or similar, introduce yourself and explain how you can assist them."
+    )
+
+    # Handle generic messages
+    if user_message.lower() in ["hi", "/start", "hello"]:
+        return (
+            "Hello! I'm ChatUTM, an AI assistant for UTM students and staff. "
+            "I can help with university-related queries, including courses, facilities, events, and more. "
+            "How can I assist you today?",
+            chat_history
+        )
+
     # Append the latest user message to the chat history
     chat_history.append(("user", user_message))
 
     # Generate a response using the QA chain
-    result = qa_chain.invoke({"question": user_message, "chat_history": chat_history})
+    result = qa_chain.invoke({"question": f"{instruction}\nUser: {user_message}", "chat_history": chat_history})
 
     # Append the assistant's response to the chat history
     chat_history.append(("assistant", result["answer"]))
