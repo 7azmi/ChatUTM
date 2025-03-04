@@ -1,25 +1,26 @@
-# Use an official Python image as the base
-FROM python:3.10
+# Use an official Python runtime as a parent image
+FROM python:3.9-slim
 
-# Set the working directory inside the container
+# Set the working directory in the container
 WORKDIR /app
 
-# Copy the main repository files to the container
-COPY . .
+# Copy the requirements file into the container
+COPY requirements.txt .
 
-# Manually clone the submodule since Railway does not include .git
-RUN rm -rf data && \
-    git clone --recursive https://github.com/7azmi/ChatUTM-Data.git data
-
-# Install required dependencies
+# Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Expose the port if your app runs on a specific port (optional)
-EXPOSE 8000  # Change this if your app runs on a different port
+# Copy the current directory contents into the container at /app
+COPY . .
 
-# Start the application
-CMD ["python", "main.py"]
-FROM ubuntu:latest
-LABEL authors="humadi"
+# Install git to handle submodules
+RUN apt-get update && apt-get install -y git
 
-ENTRYPOINT ["top", "-b"]
+# Initialize and update submodules
+RUN git submodule init && git submodule update
+
+# Set environment variables (if any)
+# ENV PYTHONUNBUFFERED=1
+
+# Run the command to start your application
+CMD ["python", "embed_documents.py"]
