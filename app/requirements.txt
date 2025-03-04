@@ -1,9 +1,0 @@
-faiss-cpu
-openai
-fastapi
-uvicorn
-langchain
-langchain-community
-langchain-openai
-tiktoken
-sqlalchemy
