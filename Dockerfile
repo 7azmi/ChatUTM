@@ -23,4 +23,4 @@ RUN git submodule init && git submodule update
 # ENV PYTHONUNBUFFERED=1
 
 # Run the command to start your application
-CMD ["python", "embed_documents.py"]
+CMD ["python", "main.py"]
