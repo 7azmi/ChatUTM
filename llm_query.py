@@ -1,10 +1,12 @@
-from langchain.chains import ConversationalRetrievalChain
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+from langchain_chroma import Chroma
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.runnables import RunnablePassthrough
+from langchain_core.runnables.history import RunnableWithMessageHistory
+from langchain_community.chat_message_histories import ChatMessageHistory
+from langchain.schema import format_document
 from dotenv import load_dotenv
 import os
-from langchain_openai import OpenAIEmbeddings, OpenAI
-from langchain_chroma import Chroma
-from langchain.chains import RetrievalQA
-
 
 # Load environment variables
 load_dotenv()
@@ -19,10 +21,56 @@ vector_store = Chroma(
     embedding_function=embeddings
 )
 
-# Initialize the conversational retrieval chain
-qa_chain = ConversationalRetrievalChain.from_llm(
-    llm=OpenAI(),
-    retriever=vector_store.as_retriever()
+# Define the prompt template
+prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            "You are ChatUTM, a witty AI assistant for UTM students and staff. "
+            "Provide accurate and useful information related to Universiti Teknologi Malaysia (UTM), including courses, facilities, events, and academic support. "
+            "If the user greets you with 'hi', '/start', or similar, introduce yourself and explain how you can assist them. "
+            "Use the following context to answer the user's question:\n\nContext:\n{context}",
+        ),
+        MessagesPlaceholder(variable_name="chat_history"),  # Placeholder for chat history
+        ("human", "{input}"),  # Placeholder for user input
+    ]
+)
+
+# Initialize the Chat Model
+llm = ChatOpenAI(
+    model="gpt-4o-mini",  # Replace with the correct model name for GPT-4o Mini
+    temperature=0.8,      # Higher temperature for more creativity
+    top_p=0.9,            # Higher top_p for more diverse responses
+    max_tokens=150        # Limit response length for brevity
+)
+
+# Format retrieved documents
+def format_docs(docs):
+    return "\n\n".join(doc.page_content for doc in docs)
+
+# Create the Runnable Chain with Retrieval
+chain = (
+    RunnablePassthrough.assign(
+        context=lambda x: format_docs(vector_store.as_retriever().invoke(x["input"]))  # Retrieve and format docs
+    )
+    | prompt
+    | llm
+)
+
+# Add Memory with RunnableWithMessageHistory
+session_store = {}  # Store chat histories for different sessions
+
+def get_session_history(session_id: str) -> ChatMessageHistory:
+    if session_id not in session_store:
+        session_store[session_id] = ChatMessageHistory()
+    return session_store[session_id]
+
+
+chain_with_history = RunnableWithMessageHistory(
+    chain,
+    get_session_history,
+    input_messages_key="input",
+    history_messages_key="chat_history",
 )
 
 def get_response(user_message, chat_history):
@@ -36,30 +84,16 @@ def get_response(user_message, chat_history):
     Returns:
         tuple: A tuple containing the response string and the updated chat history.
     """
-    # Define an instruction for ChatUTM
-    instruction = (
-        "You are ChatUTM, an AI assistant designed to help UTM students and staff. "
-        "Provide accurate and useful information related to Universiti Teknologi Malaysia (UTM), including courses, facilities, events, and academic support. "
-        "If the user greets you with 'hi', '/start', or similar, introduce yourself and explain how you can assist them."
-    )
-
-    # Handle generic messages
-    if user_message.lower() in ["hi", "/start", "hello"]:
-        return (
-            "Hello! I'm ChatUTM, an AI assistant for UTM students and staff. "
-            "I can help with university-related queries, including courses, facilities, events, and more. "
-            "How can I assist you today?",
-            chat_history
-        )
-
     # Append the latest user message to the chat history
     chat_history.append(("user", user_message))
 
     # Generate a response using the QA chain
-    result = qa_chain.invoke({"question": f"{instruction}\nUser: {user_message}", "chat_history": chat_history})
+    result = chain_with_history.invoke(
+        {"input": user_message},
+        config={"configurable": {"session_id": "user_session"}},  # Use a fixed session ID for simplicity
+    )
 
     # Append the assistant's response to the chat history
-    chat_history.append(("assistant", result["answer"]))
+    chat_history.append(("assistant", result.content))
 
-    return result["answer"], chat_history
-
+    return result.content, chat_history

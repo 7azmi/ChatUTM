@@ -49,7 +49,7 @@ def main():
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     # Run the bot
-    print("bot is botting!")
+    print("Bot is running!")
     application.run_polling()
 
 if __name__ == "__main__":
